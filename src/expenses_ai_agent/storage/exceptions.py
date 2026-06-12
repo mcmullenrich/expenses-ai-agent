@@ -1,2 +1,4 @@
 class ExpenseNotFoundError(Exception):
-    pass
+    def __init__(self, id):
+        self.id = id
+        super().__init__(id)
