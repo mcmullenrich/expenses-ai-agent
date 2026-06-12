@@ -21,7 +21,18 @@ class TestCurrencyEnum:
 
     def test_currency_has_required_values(self):
         """Currency enum must include at least these 10 common currencies."""
-        required_currencies = ["EUR", "USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "INR", "MXN"]
+        required_currencies = [
+            "EUR",
+            "USD",
+            "GBP",
+            "JPY",
+            "CHF",
+            "CAD",
+            "AUD",
+            "CNY",
+            "INR",
+            "MXN",
+        ]
 
         for code in required_currencies:
             assert hasattr(Currency, code), f"Currency.{code} is missing"
@@ -32,6 +43,7 @@ class TestCurrencyEnum:
         currencies = list(Currency)
         assert len(currencies) >= 10
         assert all(isinstance(c, Currency) for c in currencies)
+
 
 class TestExpenseCategoryEnum:
     """Tests for the ExpenseCategory enumeration."""
@@ -45,19 +57,31 @@ class TestExpenseCategoryEnum:
     def test_category_has_required_values(self):
         """ExpenseCategory enum must include all 12 categories."""
         required = [
-            "Food", "Transport", "Entertainment", "Shopping", "Health",
-            "Bills", "Education", "Travel", "Services", "Gifts",
-            "Investments", "Other",
+            "Food",
+            "Transport",
+            "Entertainment",
+            "Shopping",
+            "Health",
+            "Bills",
+            "Education",
+            "Travel",
+            "Services",
+            "Gifts",
+            "Investments",
+            "Other",
         ]
 
         for name in required:
-            assert name in [c.value for c in ExpenseCategory], f"Category '{name}' is missing"
+            assert name in [c.value for c in ExpenseCategory], (
+                f"Category '{name}' is missing"
+            )
 
     def test_category_is_iterable(self):
         """Should be able to iterate over all category values."""
         categories = list(ExpenseCategory)
         assert len(categories) == 12
         assert all(isinstance(c, ExpenseCategory) for c in categories)
+
 
 class TestStorageExceptions:
     """Tests for custom storage exceptions."""
@@ -67,6 +91,7 @@ class TestStorageExceptions:
         error = ExpenseNotFoundError(123)
         assert isinstance(error, Exception)
         assert "123" in str(error)
+
 
 class TestExpense:
     """Tests for the Expense model."""
@@ -150,6 +175,7 @@ class TestExpense:
         expense_no_user = Expense(amount=Decimal("10.00"))
         assert expense_no_user.telegram_user_id is None
 
+
 class TestRepositoryAbstractBase:
     """Tests to verify abstract base class is properly defined."""
 
@@ -163,6 +189,7 @@ class TestRepositoryAbstractBase:
     def test_inmemory_repo_inherits_from_abstract(self):
         """In-memory repository should implement the abstract base class."""
         assert issubclass(InMemoryExpenseRepository, ExpenseRepository)
+
 
 class TestInMemoryExpenseRepository:
     """Tests for the in-memory expense repository."""
@@ -232,9 +259,27 @@ class TestInMemoryExpenseRepository:
 
     def test_search_by_category(self, repo):
         """Should be able to search expenses by category."""
-        repo.add(Expense(amount=Decimal("10.00"), currency=Currency.EUR, category=ExpenseCategory.FOOD))
-        repo.add(Expense(amount=Decimal("20.00"), currency=Currency.EUR, category=ExpenseCategory.FOOD))
-        repo.add(Expense(amount=Decimal("30.00"), currency=Currency.EUR, category=ExpenseCategory.TRANSPORT))
+        repo.add(
+            Expense(
+                amount=Decimal("10.00"),
+                currency=Currency.EUR,
+                category=ExpenseCategory.FOOD,
+            )
+        )
+        repo.add(
+            Expense(
+                amount=Decimal("20.00"),
+                currency=Currency.EUR,
+                category=ExpenseCategory.FOOD,
+            )
+        )
+        repo.add(
+            Expense(
+                amount=Decimal("30.00"),
+                currency=Currency.EUR,
+                category=ExpenseCategory.TRANSPORT,
+            )
+        )
 
         food_expenses = repo.search_by_category(ExpenseCategory.FOOD)
 

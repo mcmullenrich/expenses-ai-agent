@@ -8,21 +8,22 @@ class ExpenseRepository(ABC):
     def add(self, expense) -> None:
         pass
 
-    @abstractmethod    
+    @abstractmethod
     def get(self, id: int) -> Expense | None:
         pass
 
-    @abstractmethod    
+    @abstractmethod
     def get_all(self) -> list[Expense]:
         pass
 
-    @abstractmethod    
+    @abstractmethod
     def delete(self, id: int) -> None:
         pass
 
-    @abstractmethod    
+    @abstractmethod
     def search_by_category(self, expense_category) -> list[Expense]:
         pass
+
 
 class InMemoryExpenseRepository(ExpenseRepository):
     def __init__(self):
