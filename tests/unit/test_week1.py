@@ -1,5 +1,6 @@
 from decimal import Decimal
 from datetime import datetime, timezone
+from abc import ABC
 
 
 import pytest
@@ -148,3 +149,17 @@ class TestExpense:
 
         expense_no_user = Expense(amount=Decimal("10.00"))
         assert expense_no_user.telegram_user_id is None
+
+class TestRepositoryAbstractBase:
+    """Tests to verify abstract base class is properly defined."""
+
+    def test_expense_repository_is_abstract(self):
+        """ExpenseRepository should be an abstract base class."""
+        assert issubclass(ExpenseRepository, ABC)
+
+        with pytest.raises(TypeError):
+            ExpenseRepository()
+
+    def test_inmemory_repo_inherits_from_abstract(self):
+        """In-memory repository should implement the abstract base class."""
+        assert issubclass(InMemoryExpenseRepository, ExpenseRepository)

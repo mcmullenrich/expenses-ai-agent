@@ -1,8 +1,10 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class ExpenseRepository(ABC):
-    pass
+    @abstractmethod
+    def add_expense(self):
+        pass
 
 
 class InMemoryExpenseRepository(ExpenseRepository):
