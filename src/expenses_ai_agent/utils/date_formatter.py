@@ -1,6 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+
 def format_datetime(datetime_str: str, timezone_str: str | None = None) -> str:
     parsed_datetime = datetime.fromisoformat(datetime_str)
     if timezone_str is not None:

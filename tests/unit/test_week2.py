@@ -12,7 +12,11 @@ from expenses_ai_agent.llms.output import ExpenseCategorizationResponse
 from expenses_ai_agent.storage.models import Currency
 from expenses_ai_agent.utils.currency import convert_currency
 from expenses_ai_agent.utils.date_formatter import format_datetime
-from expenses_ai_agent.tools.tools import CURRENCY_CONVERSION_TOOL, DATETIME_FORMATTER_TOOL
+from expenses_ai_agent.tools.tools import (
+    CURRENCY_CONVERSION_TOOL,
+    DATETIME_FORMATTER_TOOL,
+)
+from expenses_ai_agent.llms.openai import OpenAIAssistant
 
 
 class TestExpenseCategorizationResponse:
@@ -78,12 +82,15 @@ class TestExpenseCategorizationResponse:
         assert "Food" in json_str
         assert "25" in json_str
 
+
 class TestAssistantProtocol:
     """Tests for the Assistant Protocol definition."""
 
     def test_assistant_protocol_exists(self):
         """Assistant should be defined as a Protocol."""
-        assert hasattr(Assistant, "__protocol_attrs__") or issubclass(Assistant, Protocol)
+        assert hasattr(Assistant, "__protocol_attrs__") or issubclass(
+            Assistant, Protocol
+        )
 
     def test_assistant_has_completion_method(self):
         """Assistant Protocol must define completion method."""
@@ -150,6 +157,7 @@ class TestTypeAliases:
         }
         assert "prompt" in sample_cost
 
+
 class TestCurrencyConversion:
     """Tests for the currency conversion utility."""
 
@@ -199,6 +207,7 @@ class TestCurrencyConversion:
 
             assert result == Decimal("150")
 
+
 class TestDateFormatter:
     """Tests for the date formatting utility."""
 
@@ -221,9 +230,12 @@ class TestDateFormatter:
 
     def test_format_datetime_with_timezone(self):
         """Should support timezone conversion."""
-        result = format_datetime("2024-06-15T12:00:00+00:00", timezone_str="Europe/Madrid")
+        result = format_datetime(
+            "2024-06-15T12:00:00+00:00", timezone_str="Europe/Madrid"
+        )
 
         assert isinstance(result, str)
+
 
 class TestToolSchemas:
     """Tests for OpenAI-compatible tool schemas."""
@@ -253,3 +265,53 @@ class TestToolSchemas:
         """Datetime formatter tool schema should be defined."""
         assert isinstance(DATETIME_FORMATTER_TOOL, dict)
         assert DATETIME_FORMATTER_TOOL.get("type") == "function"
+
+
+class TestOpenAIAssistant:
+    """Tests for OpenAIAssistant implementation."""
+
+    def test_openai_assistant_exists(self):
+        """OpenAIAssistant should be importable."""
+        assert OpenAIAssistant is not None
+
+    def test_openai_assistant_satisfies_protocol(self):
+        """OpenAIAssistant should satisfy the Assistant Protocol."""
+        assert hasattr(OpenAIAssistant, "completion")
+        assert hasattr(OpenAIAssistant, "calculate_cost")
+        assert hasattr(OpenAIAssistant, "get_available_models")
+
+    def test_calculate_cost_returns_decimal(self):
+        """calculate_cost should return a Decimal."""
+        with patch("expenses_ai_agent.llms.openai.OpenAI"):
+            assistant = OpenAIAssistant(model="gpt-4o-mini", api_key="test-key")
+            cost = assistant.calculate_cost(100, 50)
+            assert isinstance(cost, Decimal)
+
+    def test_completion_calls_openai_and_returns_response(self):
+        """completion should call the OpenAI API and return ExpenseCategorizationResponse."""
+        # MagicMock is used here (not create_autospec) because the OpenAI SDK's
+        # deeply-nested attributes don't autospec cleanly. Week 3 uses
+        # create_autospec(Assistant) where we control the interface.
+        with patch("expenses_ai_agent.llms.openai.OpenAI") as mock_openai_cls:
+            mock_client = MagicMock()
+            mock_openai_cls.return_value = mock_client
+
+            mock_parsed = ExpenseCategorizationResponse(
+                category="Food",
+                total_amount=Decimal("5.50"),
+                currency=Currency.USD,
+                confidence=0.95,
+                cost=Decimal("0.001"),
+            )
+            mock_response = MagicMock()
+            mock_response.choices[0].message.parsed = mock_parsed
+            mock_response.usage.prompt_tokens = 100
+            mock_response.usage.completion_tokens = 50
+            mock_client.beta.chat.completions.parse.return_value = mock_response
+
+            assistant = OpenAIAssistant(model="gpt-4o-mini", api_key="test-key")
+            messages = [{"role": "user", "content": "Coffee $5.50"}]
+            result = assistant.completion(messages)
+
+            assert isinstance(result, ExpenseCategorizationResponse)
+            mock_client.beta.chat.completions.parse.assert_called_once()

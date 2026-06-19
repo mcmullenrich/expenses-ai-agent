@@ -1,5 +1,3 @@
-
-
 CURRENCY_CONVERSION_TOOL = {
     "type": "function",
     "function": {
@@ -21,9 +19,9 @@ CURRENCY_CONVERSION_TOOL = {
                     "description": "The currency we are converting to.",
                 },
             },
-            "required": ["amount", "from_currency", "to_currency"]
+            "required": ["amount", "from_currency", "to_currency"],
         },
-    }
+    },
 }
 
 DATETIME_FORMATTER_TOOL = {
@@ -43,7 +41,7 @@ DATETIME_FORMATTER_TOOL = {
                     "description": "A timzone associated with the datetime.",
                 },
             },
-            "required": ["datetime_str"]
+            "required": ["datetime_str"],
         },
-    }
+    },
 }
