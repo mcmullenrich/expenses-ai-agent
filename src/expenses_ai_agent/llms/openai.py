@@ -19,7 +19,7 @@ GPT_4O_MINI = ModelConstants(
 )
 
 MODEL_MAP = {
-    "gpt-4o-mini": (GPT_4O_MINI.PROMPT_TOKENS, GPT_4O_MINI.COMPLETION_TOKENS)
+    "gpt-4o-mini": GPT_4O_MINI
 }
 
 class OpenAIAssistant:
@@ -50,7 +50,7 @@ class OpenAIAssistant:
 
     def calculate_cost(self, prompt_tokens: int, completion_tokens: int) -> Decimal:
         try:
-            cost = (prompt_tokens * MODEL_MAP[self.model][0]) + (completion_tokens * MODEL_MAP[self.model][1])
+            cost = (prompt_tokens * MODEL_MAP[self.model].PROMPT_TOKENS) + (completion_tokens * MODEL_MAP[self.model].COMPLETION_TOKENS)
         except KeyError:
             raise KeyError(f"Model '{self.model}' is not in MODEL_MAP")
         return cost
