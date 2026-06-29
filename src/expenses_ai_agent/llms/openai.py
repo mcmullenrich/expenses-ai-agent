@@ -4,16 +4,17 @@ from decimal import Decimal
 from typing import Any, cast
 from expenses_ai_agent.llms.base import MESSAGES
 from expenses_ai_agent.llms.output import ExpenseCategorizationResponse
+from expenses_ai_agent.storage.exceptions import EmptyResponseError
 
-OPENAI_API_KEY = config("OPENAI_API_KEY")
-
+MODEL_MAP = {
+    "gpt-4o-mini": (Decimal("0.00000015"), Decimal("0.0000006"))
+}
 
 class OpenAIAssistant:
     def __init__(self, model: str = "gpt-4o-mini", api_key: str | None = None):
-        if api_key is None:
-            api_key = OPENAI_API_KEY
-
-        self.client = OpenAI(api_key=api_key)
+        self.api_key = api_key or config("OPENAI_API_KEY", default="")
+        
+        self.client = OpenAI(api_key=self.api_key)
         self.model = model
 
     def completion(self, messages: MESSAGES) -> ExpenseCategorizationResponse:
@@ -24,9 +25,9 @@ class OpenAIAssistant:
         )
         result = response.choices[0].message.parsed
         if result is None:
-            raise ValueError("Failed to parse response from OpenAI")
+            raise EmptyResponseError("Failed to parse response from OpenAI")
 
-        if response.usage:
+        if response.usage is not None:
             result.cost = self.calculate_cost(
                 response.usage.prompt_tokens,
                 response.usage.completion_tokens,
@@ -34,10 +35,11 @@ class OpenAIAssistant:
 
         return result
 
-    def calculate_cost(self, prompt_tokens, completion_tokens) -> Decimal:
-        cost = (prompt_tokens * Decimal("0.00000015")) + (
-            completion_tokens * Decimal("0.0000006")
-        )
+    def calculate_cost(self, prompt_tokens: int, completion_tokens: int) -> Decimal:
+        try:
+            cost = (prompt_tokens * MODEL_MAP[self.model][0]) + (completion_tokens * MODEL_MAP[self.model][1])
+        except KeyError:
+            raise KeyError(f"Model '{self.model}' is not in MODEL_MAP")
         return cost
 
     def get_available_models(self) -> list[str]:

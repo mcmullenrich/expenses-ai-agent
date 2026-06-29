@@ -1,4 +1,6 @@
-CURRENCY_CONVERSION_TOOL = {
+from typing import Any
+
+CURRENCY_CONVERSION_TOOL: dict[str, Any] = {
     "type": "function",
     "function": {
         "name": "currency_conversion_tool",
@@ -24,7 +26,7 @@ CURRENCY_CONVERSION_TOOL = {
     },
 }
 
-DATETIME_FORMATTER_TOOL = {
+DATETIME_FORMATTER_TOOL: dict[str, Any] = {
     "type": "function",
     "function": {
         "name": "datetime_formatter_tool",
