@@ -9,7 +9,7 @@ CURRENCY_CONVERSION_TOOL: dict[str, Any] = {
             "type": "object",
             "properties": {
                 "amount": {
-                    "type": "string",
+                    "type": "number",
                     "description": "The amount of from_currency to be converted to to_currency.",
                 },
                 "from_currency": {

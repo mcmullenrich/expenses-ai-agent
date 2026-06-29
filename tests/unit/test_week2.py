@@ -1,11 +1,11 @@
-import inspect
+import inspect, pytest
 from enum import StrEnum
 from typing import Protocol
 from datetime import datetime, timezone  # timezone used here; both dropped in Step 4
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from expenses_ai_agent.llms.base import COST, MESSAGES, Assistant, LLMProvider
 from expenses_ai_agent.llms.output import ExpenseCategorizationResponse
@@ -17,6 +17,7 @@ from expenses_ai_agent.tools.tools import (
     DATETIME_FORMATTER_TOOL,
 )
 from expenses_ai_agent.llms.openai import OpenAIAssistant
+from expenses_ai_agent.storage.exceptions import EmptyResponseError
 
 
 class TestExpenseCategorizationResponse:
@@ -81,6 +82,17 @@ class TestExpenseCategorizationResponse:
         json_str = response.model_dump_json()
         assert "Food" in json_str
         assert "25" in json_str
+
+    def test_confidence_out_of_range_raises(self):
+        """Confidence above 1.0 should raise a ValidationError."""
+        with pytest.raises(ValidationError):
+            response = ExpenseCategorizationResponse(
+                category=ExpenseCategory.FOOD,
+                total_amount=Decimal("25.00"),
+                currency=Currency.GBP,
+                confidence=1.5,
+                cost=Decimal("0.001"),
+        )
 
 
 class TestAssistantProtocol:
@@ -168,7 +180,6 @@ class TestCurrencyConversion:
     def test_convert_currency_returns_decimal(self):
         """Currency conversion should return a Decimal value."""
         with (
-            patch("expenses_ai_agent.utils.currency.EXCHANGE_RATE_API_KEY", "test-key"),
             patch("expenses_ai_agent.utils.currency.requests.get") as mock_get,
         ):
             mock_response = MagicMock()
@@ -179,7 +190,7 @@ class TestCurrencyConversion:
             mock_response.raise_for_status = MagicMock()
             mock_get.return_value = mock_response
 
-            result = convert_currency(Decimal("100"), "EUR", "USD")
+            result = convert_currency(Decimal("100"), "EUR", "USD", exchange_rate_key="test-key")
 
             assert isinstance(result, Decimal)
 
@@ -192,7 +203,6 @@ class TestCurrencyConversion:
     def test_convert_currency_applies_rate(self):
         """Conversion should apply the exchange rate correctly."""
         with (
-            patch("expenses_ai_agent.utils.currency.EXCHANGE_RATE_API_KEY", "test-key"),
             patch("expenses_ai_agent.utils.currency.requests.get") as mock_get,
         ):
             mock_response = MagicMock()
@@ -203,7 +213,7 @@ class TestCurrencyConversion:
             mock_response.raise_for_status = MagicMock()
             mock_get.return_value = mock_response
 
-            result = convert_currency(Decimal("100"), "EUR", "USD")
+            result = convert_currency(Decimal("100"), "EUR", "USD", exchange_rate_key="test-key")
 
             assert result == Decimal("150")
 
@@ -315,3 +325,26 @@ class TestOpenAIAssistant:
 
             assert isinstance(result, ExpenseCategorizationResponse)
             mock_client.beta.chat.completions.parse.assert_called_once()
+            assert result.cost == (Decimal("0.00000015") * 100 + Decimal("0.0000006") * 50)
+
+    def test_completion_raises_empty_response_error(self):
+        """completion should raise an EmptyResponseError when None."""
+        with patch("expenses_ai_agent.llms.openai.OpenAI") as mock_openai_cls:
+            mock_client = MagicMock()
+            mock_openai_cls.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.choices[0].message.parsed = None
+            mock_client.beta.chat.completions.parse.return_value = mock_response
+
+            assistant = OpenAIAssistant(model="gpt-4o-mini", api_key="test-key")
+            messages = [{"role": "user", "content": "Coffee $5.50"}]            
+
+            with pytest.raises(EmptyResponseError):
+                result = assistant.completion(messages)
+
+    def test_calculate_cost_raises_key_error(self):
+        """calculate_cost should raise a KeyError for an unsupported model."""
+        assistant = OpenAIAssistant(model="gpt-5", api_key="test-key")
+        
+        with pytest.raises(KeyError):
+            result = assistant.calculate_cost(100,50)

@@ -25,7 +25,8 @@ MODEL_MAP = {
 class OpenAIAssistant:
     def __init__(self, model: str = "gpt-4o-mini", api_key: str | None = None):
         self.api_key = api_key or config("OPENAI_API_KEY", default="")
-        
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY is not set")
         self.client = OpenAI(api_key=self.api_key)
         self.model = model
 
