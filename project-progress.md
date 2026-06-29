@@ -46,8 +46,8 @@
 - Forward references in type hints: use `-> "Expense"` when inside the class being referenced
 
 ## Week 2 — IN PROGRESS 🔄
-- Branch: `week2` — PR open, feedback addressed, awaiting approval
-- All 57 tests passing, `uv run ty check .` clean
+- Branch: `week2` — PR open, second round of feedback addressed, awaiting approval
+- All 60 tests passing, `uv run ty check .` clean
 
 ### Steps Completed
 - Step 1: `ExpenseCategorizationResponse` Pydantic model (`llms/output.py`)
@@ -57,7 +57,7 @@
 - Step 5: Tool schemas for OpenAI function calling (`tools/tools.py`)
 - Step 6: `OpenAIAssistant` implementation (`llms/openai.py`)
 
-### PR Feedback Addressed
+### PR Feedback Addressed (Round 1)
 - Moved `OPENAI_API_KEY` config read from module level into `__init__` (lazy config pattern)
 - Replaced hardcoded prices in `calculate_cost` with `MODEL_MAP` dict and `ModelConstants` Pydantic class
 - Added `try/except KeyError` to `calculate_cost` for unsupported models
@@ -72,17 +72,32 @@
 - Added `dict[str, Any]` type hints to tool schema constants in `tools/tools.py`
 - Updated test file to use `ExpenseCategory` enum values instead of plain strings
 
+### PR Feedback Addressed (Round 2)
+- Moved `EXCHANGE_RATE_API_KEY` from module level into `convert_currency` as a parameter (lazy config pattern)
+- Added `timeout=10` to `requests.get()` in `convert_currency`
+- Broadened exception handling in `convert_currency` to catch `ConnectionError` and `Timeout` in addition to `HTTPError`
+- Added check for `data.get("result") != "success"` to catch API errors that return 200 with error body
+- Added `try/except ZoneInfoNotFoundError` to `format_datetime` for invalid timezone strings
+- Fixed tool schema `amount` field from `"type": "string"` to `"type": "number"`
+- Added `if not self.api_key: raise ValueError` to fail fast on missing API key
+- Stored `GPT_4O_MINI` object directly as `MODEL_MAP` value instead of unpacking into a tuple
+- Added new tests: `confidence` out of range raises `ValidationError`, `EmptyResponseError` on `None` response, `KeyError` on unsupported model, `result.cost` value assertion
+
 ### Key Learnings
-- Module-level `config()` reads crash imports if env vars are missing — always read lazily inside `__init__`
+- Module-level `config()` reads crash imports if env vars are missing — always read lazily inside `__init__` or as a function parameter
 - `if x is not None` is more explicit than `if x` — use it when checking for `None` specifically
 - Early returns eliminate the need for `else` — drop it for cleaner, more idiomatic Python
 - `response.raise_for_status()` automatically raises `HTTPError` on bad responses
+- Always add `timeout=` to `requests.get()` — without it the request can hang indefinitely
+- APIs can return 200 with an error body — always check the response payload, not just the status code
 - `dict[str, Any]` is the right type hint for deeply nested dictionaries
 - Custom exceptions are more descriptive than generic ones (`EmptyResponseError` vs `ValueError`)
 - Pydantic `Field(ge=0.0, le=1.0)` enforces value ranges at runtime
 - Variable type annotations use `:` not `->` (e.g. `CONSTANT: dict[str, Any] = {...}`)
-- `MODEL_MAP[self.model]` looks up by key; `self.model[0]` indexes into the string itself
 - Pydantic `BaseModel` can be used for configuration/constants, not just API response models
+- Storing a Pydantic object as a dict value is cleaner than unpacking its fields into a tuple
+- `pytest.raises(ExceptionType)` is used in tests to assert that a specific exception is raised
+- Fail fast on missing config — an empty string API key produces a confusing late error; raise early instead
 
 ## Lessons Covered
 - 03: Environment Setup
