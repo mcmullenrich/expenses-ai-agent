@@ -2,12 +2,24 @@ from decouple import config
 from openai import OpenAI
 from decimal import Decimal
 from typing import Any, cast
+from pydantic import BaseModel
 from expenses_ai_agent.llms.base import MESSAGES
 from expenses_ai_agent.llms.output import ExpenseCategorizationResponse
 from expenses_ai_agent.storage.exceptions import EmptyResponseError
 
+
+class ModelConstants(BaseModel):
+    PROMPT_TOKENS: Decimal
+    COMPLETION_TOKENS: Decimal
+
+
+GPT_4O_MINI = ModelConstants(
+    PROMPT_TOKENS = Decimal("0.00000015"),
+    COMPLETION_TOKENS = Decimal("0.0000006")
+)
+
 MODEL_MAP = {
-    "gpt-4o-mini": (Decimal("0.00000015"), Decimal("0.0000006"))
+    "gpt-4o-mini": (GPT_4O_MINI.PROMPT_TOKENS, GPT_4O_MINI.COMPLETION_TOKENS)
 }
 
 class OpenAIAssistant:
