@@ -8,8 +8,11 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "openai>=2.43.0",
     "python-decouple>=3.8",
+    "requests>=2.34.2",
     "sqlmodel>=0.0.38",
+    "tzdata>=2026.2",
 ]
 
 [project.scripts]

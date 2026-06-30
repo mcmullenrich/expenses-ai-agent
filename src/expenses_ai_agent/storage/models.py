@@ -49,7 +49,13 @@ class Expense(SQLModel, table=True):
         return f"{self.amount} {self.currency}"
 
     @classmethod
-    def create(cls, amount: Decimal, currency: Currency, description: str, category: ExpenseCategory) -> "Expense":
+    def create(
+        cls,
+        amount: Decimal,
+        currency: Currency,
+        description: str,
+        category: ExpenseCategory,
+    ) -> "Expense":
         return cls(
             amount=amount, currency=currency, description=description, category=category
         )
